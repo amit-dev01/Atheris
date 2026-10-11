@@ -224,19 +224,11 @@ class CompetitorMonitoringService:
                     continue
 
                 clean_website = website.rstrip("/")
-                try:
-                    from inhouse_crawler import InHouseCrawler
-                    discovered_endpoints = await InHouseCrawler.discover_competitor_pages(clean_website)
-                    pages_to_monitor = list(set(discovered_endpoints.values()))
-                except Exception as crawl_err:
-                    logger.warning("InHouseCrawler discovery failed for %s (%s), using fallbacks", clean_website, crawl_err)
-                    pages_to_monitor = [
-                        clean_website,
-                        f"{clean_website}/pricing",
-                        f"{clean_website}/features",
-                        f"{clean_website}/changelog",
-                        f"{clean_website}/blog",
-                    ]
+                pages_to_monitor = [
+                    clean_website,
+                    f"{clean_website}/pricing",
+                    f"{clean_website}/blog",
+                ]
 
                 documents_found += len(pages_to_monitor)
 
