@@ -522,3 +522,34 @@ class BattleSimulationResponse(BaseModel):
     midTermMoatStrategy: str
     salesRepPlaybook: str
     timelineForecast: list[dict[str, Any]]
+
+
+# ---------------------------------------------------------------------------
+# Competitive Knowledge Graph Models (Enterprise Graph DB Schema)
+# ---------------------------------------------------------------------------
+
+class GraphNode(BaseModel):
+    id: str
+    label: str  # Company, Product, Feature, PricingTier, Integration
+    name: str
+    properties: dict[str, Any] = {}
+
+
+class GraphEdge(BaseModel):
+    id: str
+    source: str
+    target: str
+    relation: str  # OFFERS, HAS_FEATURE, HAS_TIER, GATES_FEATURE, INTEGRATES_WITH, COMPETES_WITH
+    weight: float = 1.0
+    properties: dict[str, Any] = {}
+
+
+class CompetitiveKnowledgeGraphResponse(BaseModel):
+    nodes: list[GraphNode]
+    edges: list[GraphEdge]
+    cypherQuery: Optional[str] = None
+    summary: dict[str, Any] = {}
+
+
+class GraphUrlExtractPayload(BaseModel):
+    url: str
