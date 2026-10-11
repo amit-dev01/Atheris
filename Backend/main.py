@@ -119,7 +119,6 @@ from battle_simulator_service import BattleSimulatorService
 from web_presence_service import WebPresenceService
 from visual_diff_service import VisualDiffService
 from product_teardown_service import ProductTeardownService
-from knowledge_graph_service import KnowledgeGraphService
 from models import (
     DealOutcomePayload,
     SemanticSimilarityPayload,
@@ -131,8 +130,6 @@ from models import (
     ChatResponse,
     BattleSimulatePayload,
     BattleSimulationResponse,
-    CompetitiveKnowledgeGraphResponse,
-    GraphUrlExtractPayload,
 )
 
 
@@ -2673,60 +2670,6 @@ async def get_crawler_status():
             {"tier": 3, "name": "Managed Cloud Jina Fallback", "status": "STANDBY"}
         ]
     }
-
-
-@app.get("/api/graph/landscape", response_model=CompetitiveKnowledgeGraphResponse)
-async def get_competitive_landscape_graph(
-    user_id: str = Depends(get_current_user)
-) -> CompetitiveKnowledgeGraphResponse:
-    """
-    Returns the complete enterprise Competitive Knowledge Graph:
-    - Nodes: Company, Product, Feature, PricingTier, Integration
-    - Edges: OFFERS, HAS_FEATURE, HAS_TIER, GATES_FEATURE, COMPETES_WITH
-    - Includes executable Neo4j Cypher query script.
-    """
-    company = get_company_profile(user_id)
-    if not company:
-        raise HTTPException(status_code=404, detail="Company profile not found.")
-    company_id = str(company.get("id", ""))
-    return KnowledgeGraphService.build_landscape_graph(company_id)
-
-
-@app.post("/api/graph/extract-from-url")
-async def extract_graph_from_url_endpoint(
-    payload: GraphUrlExtractPayload
-):
-    """
-    Crawls and scrapes any competitor URL via In-House Scrapling + Jina AI,
-    then automatically parses the content into Graph Nodes & Edges.
-    """
-    from scraper import crawl_and_scrape_competitor
-    if not payload.url or not payload.url.strip():
-        raise HTTPException(status_code=400, detail="Missing URL parameter.")
-    try:
-        scraped_dossier = await crawl_and_scrape_competitor(payload.url.strip())
-        graph = KnowledgeGraphService.extract_graph_from_scraped_dossier(scraped_dossier)
-        return graph
-    except Exception as e:
-        logger.exception("Graph extraction failed: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get("/api/graph/cypher-export")
-async def export_cypher_script(
-    user_id: str = Depends(get_current_user)
-):
-    """Generates plain-text Neo4j Cypher statements for import into Neo4j or Memgraph."""
-    company = get_company_profile(user_id)
-    if not company:
-        raise HTTPException(status_code=404, detail="Company profile not found.")
-    company_id = str(company.get("id", ""))
-    graph = KnowledgeGraphService.build_landscape_graph(company_id)
-    return Response(
-        content=graph.get("cypherQuery", ""),
-        media_type="text/plain",
-        headers={"Content-Disposition": "attachment; filename=competitive_knowledge_graph.cypher"}
-    )
 
 
 # ---------------------------------------------------------------------------
