@@ -2629,6 +2629,49 @@ async def generate_jira_link(
     )
 
 
+class CrawlScrapePayload(BaseModel):
+    url: str
+
+
+@app.post("/api/crawler/crawl-and-scrape")
+async def crawl_and_scrape_endpoint(payload: CrawlScrapePayload):
+    """
+    Autonomous In-House Crawler + Scraper endpoint.
+    Crawls competitor domain navigation graph, parses sitemap/robots.txt,
+    categorizes endpoints (Pricing, Features, Changelog), and extracts text via Scrapling.
+    """
+    from scraper import crawl_and_scrape_competitor
+    if not payload.url or not payload.url.strip():
+        raise HTTPException(status_code=400, detail="Missing URL parameter.")
+    try:
+        result = await crawl_and_scrape_competitor(payload.url.strip())
+        return result
+    except Exception as e:
+        logger.exception("In-house crawl & scrape failed: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/crawler/inhouse-status")
+async def get_crawler_status():
+    """Returns runtime telemetry for the in-house crawler & Scrapling engine."""
+    has_scrapling = False
+    try:
+        import scrapling
+        has_scrapling = True
+    except ImportError:
+        pass
+    return {
+        "engine": "In-House Autonomous Targeted Crawler & Scrapling Suite",
+        "scrapling_installed": has_scrapling,
+        "crawler_mode": "Intent-Based Navigation Graph BFS (Depth <= 2)",
+        "tiers": [
+            {"tier": 1, "name": "Scrapling Stealth Fetcher", "status": "ACTIVE"},
+            {"tier": 2, "name": "In-House Direct HTTP + Heading Sanitizer", "status": "ACTIVE"},
+            {"tier": 3, "name": "Managed Cloud Jina Fallback", "status": "STANDBY"}
+        ]
+    }
+
+
 # ---------------------------------------------------------------------------
 # Run directly
 # ---------------------------------------------------------------------------
